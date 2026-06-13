@@ -1,3 +1,4 @@
+import { ExpandableCard } from "@/components/ui/expandable-card";
 import { SectionHeader } from "@/components/ui/section-header";
 import { formatCurrency } from "@/lib/currency/format-currency";
 import { deleteReserveAction } from "@/features/reserves/reserves.actions";
@@ -29,39 +30,43 @@ export async function ReserveList() {
           </article>
         ) : null}
         {reservesWithTransactions.map(({ reserve, transactions }) => (
-          <article key={reserve.id} className="glass-card rounded-[1.5rem] p-5">
-            <h2 className="font-medium">{reserve.name}</h2>
-            <p className="mt-3 text-sm text-slate-300">
-              Meta: {formatCurrency(reserve.target_amount)}
-            </p>
-            <strong className="mt-4 block text-2xl">
-              {formatCurrency(reserve.current_amount)}
-            </strong>
-            <p className="mt-2 text-sm text-slate-300">
-              Status: {reserve.status} | {reserve.objective ?? "Sem objetivo detalhado"}
-            </p>
-            <div className="mt-4">
+          <ExpandableCard
+            key={reserve.id}
+            summary={(
+              <>
+                <h2 className="font-medium">{reserve.name}</h2>
+                <p className="mt-3 text-sm text-slate-300">
+                  Meta: {formatCurrency(reserve.target_amount)}
+                </p>
+                <strong className="mt-4 block text-2xl">
+                  {formatCurrency(reserve.current_amount)}
+                </strong>
+                <p className="mt-2 text-sm text-slate-300">
+                  Status: {reserve.status} | {reserve.objective ?? "Sem objetivo detalhado"}
+                </p>
+              </>
+            )}
+          >
+            <div className="space-y-4">
               <ReserveForm reserve={reserve} />
-            </div>
-            <div className="mt-4">
               <ReserveTransactionForm reserveId={reserve.id} />
+              <div className="space-y-2 text-sm text-slate-300">
+                {transactions.slice(0, 3).map((transaction) => (
+                  <div key={transaction.id} className="flex items-center justify-between">
+                    <span>{transaction.transaction_type === "deposit" ? "Aporte" : "Retirada"}</span>
+                    <strong>{formatCurrency(transaction.amount)}</strong>
+                  </div>
+                ))}
+                {transactions.length === 0 ? <p>Nenhuma movimentacao ainda.</p> : null}
+              </div>
+              <form action={deleteReserveAction}>
+                <input type="hidden" name="id" value={reserve.id} />
+                <button className="w-full rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
+                  Excluir
+                </button>
+              </form>
             </div>
-            <div className="mt-4 space-y-2 text-sm text-slate-300">
-              {transactions.slice(0, 3).map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between">
-                  <span>{transaction.transaction_type === "deposit" ? "Aporte" : "Retirada"}</span>
-                  <strong>{formatCurrency(transaction.amount)}</strong>
-                </div>
-              ))}
-              {transactions.length === 0 ? <p>Nenhuma movimentacao ainda.</p> : null}
-            </div>
-            <form action={deleteReserveAction} className="mt-4">
-              <input type="hidden" name="id" value={reserve.id} />
-              <button className="w-full rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
-                Excluir
-              </button>
-            </form>
-          </article>
+          </ExpandableCard>
         ))}
       </div>
     </section>

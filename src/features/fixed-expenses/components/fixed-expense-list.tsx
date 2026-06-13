@@ -1,6 +1,8 @@
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { ExpandableCard } from "@/components/ui/expandable-card";
 import { SectionHeader } from "@/components/ui/section-header";
 import { formatCurrency } from "@/lib/currency/format-currency";
+import { requireUser } from "@/features/auth/server/require-user";
 import { listCategoryOptions } from "@/features/categories/repositories/category-repository";
 import {
   deleteFixedExpenseAction,
@@ -17,7 +19,6 @@ import {
   calculateEstimatedVsRealVariation,
   calculateNextDueDate,
 } from "@/features/fixed-expenses/fixed-expenses.service";
-import { requireUser } from "@/features/auth/server/require-user";
 
 export async function FixedExpenseList() {
   const user = await requireUser();
@@ -44,38 +45,44 @@ export async function FixedExpenseList() {
           </article>
         ) : null}
         {expenses.map((expense) => (
-          <article key={expense.id} className="glass-card rounded-[1.5rem] p-5">
-            <h2 className="font-medium">{expense.name}</h2>
-            <p className="mt-2 text-sm text-slate-300">
-              {expense.amount_mode === "fixed" ? "Valor fixo" : "Valor variavel"} | Vence dia {expense.due_day}
-            </p>
-            <p className="mt-2 text-sm text-slate-300">
-              Valor padrao: {formatCurrency(expense.default_amount)} | {(expense.categories as { name?: string } | null)?.name ?? "Sem categoria"}
-            </p>
-            {expense.is_active ? (
-              <p className="mt-2 text-sm text-slate-400">
-                Proxima data: {calculateNextDueDate(expense.due_day, month)}
-              </p>
-            ) : null}
-            <div className="mt-4">
+          <ExpandableCard
+            key={expense.id}
+            summary={(
+              <>
+                <h2 className="font-medium">{expense.name}</h2>
+                <p className="mt-2 text-sm text-slate-300">
+                  {expense.amount_mode === "fixed" ? "Valor fixo" : "Valor variavel"} | Vence dia {expense.due_day}
+                </p>
+                <p className="mt-2 text-sm text-slate-300">
+                  Valor padrao: {formatCurrency(expense.default_amount)} | {(expense.categories as { name?: string } | null)?.name ?? "Sem categoria"}
+                </p>
+                {expense.is_active ? (
+                  <p className="mt-2 text-sm text-slate-400">
+                    Proxima data: {calculateNextDueDate(expense.due_day, month)}
+                  </p>
+                ) : null}
+              </>
+            )}
+          >
+            <div className="space-y-4">
               <FixedExpenseForm categories={categories} expense={expense} />
+              <div className="flex gap-3">
+                <form action={toggleFixedExpenseAction} className="flex-1">
+                  <input type="hidden" name="id" value={expense.id} />
+                  <input type="hidden" name="is_active" value={expense.is_active ? "false" : "true"} />
+                  <button className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
+                    {expense.is_active ? "Inativar" : "Reativar"}
+                  </button>
+                </form>
+                <form action={deleteFixedExpenseAction} className="flex-1">
+                  <input type="hidden" name="id" value={expense.id} />
+                  <button className="w-full rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
+                    Excluir
+                  </button>
+                </form>
+              </div>
             </div>
-            <div className="mt-4 flex gap-3">
-              <form action={toggleFixedExpenseAction} className="flex-1">
-                <input type="hidden" name="id" value={expense.id} />
-                <input type="hidden" name="is_active" value={expense.is_active ? "false" : "true"} />
-                <button className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
-                  {expense.is_active ? "Inativar" : "Reativar"}
-                </button>
-              </form>
-              <form action={deleteFixedExpenseAction} className="flex-1">
-                <input type="hidden" name="id" value={expense.id} />
-                <button className="w-full rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
-                  Excluir
-                </button>
-              </form>
-            </div>
-          </article>
+          </ExpandableCard>
         ))}
       </div>
 
@@ -97,21 +104,27 @@ export async function FixedExpenseList() {
           });
 
           return (
-            <article key={expense.id} className="glass-card rounded-[1.5rem] p-5">
-              <h3 className="font-medium">
-                {expense.description} - {expense.competence_month?.slice(0, 7) ?? "Sem competencia"}
-              </h3>
-              <p className="mt-2 text-sm text-slate-300">
-                Valor estimado: {formatCurrency(expense.estimated_amount ?? expense.amount)}
-              </p>
-              <p className="mt-1 text-sm text-slate-300">
-                Valor real: {formatCurrency(expense.amount)}
-              </p>
-              <p className="mt-1 text-sm text-slate-300">
-                Diferenca: {variation >= 0 ? "+" : "-"}{formatCurrency(Math.abs(variation))}
-              </p>
-              <p className="mt-1 text-sm text-slate-300">Status: {expense.status}</p>
-              <form action={updateGeneratedFixedExpenseAction} className="mt-4 grid gap-3 md:grid-cols-2">
+            <ExpandableCard
+              key={expense.id}
+              summary={(
+                <>
+                  <h3 className="font-medium">
+                    {expense.description} - {expense.competence_month?.slice(0, 7) ?? "Sem competencia"}
+                  </h3>
+                  <p className="mt-2 text-sm text-slate-300">
+                    Valor estimado: {formatCurrency(expense.estimated_amount ?? expense.amount)}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-300">
+                    Valor real: {formatCurrency(expense.amount)}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-300">
+                    Diferenca: {variation >= 0 ? "+" : "-"}{formatCurrency(Math.abs(variation))}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-300">Status: {expense.status}</p>
+                </>
+              )}
+            >
+              <form action={updateGeneratedFixedExpenseAction} className="grid gap-3 md:grid-cols-2">
                 <input type="hidden" name="id" value={expense.id} />
                 <input type="hidden" name="fixed_expense_id" value={expense.fixed_expense_id ?? ""} />
                 <input type="hidden" name="estimated_amount" value={expense.estimated_amount ?? expense.amount} />
@@ -131,7 +144,7 @@ export async function FixedExpenseList() {
                   Salvar valor real do mes
                 </button>
               </form>
-            </article>
+            </ExpandableCard>
           );
         })}
       </div>
