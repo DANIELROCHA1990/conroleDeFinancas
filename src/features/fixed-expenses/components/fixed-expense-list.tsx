@@ -1,3 +1,4 @@
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { SectionHeader } from "@/components/ui/section-header";
 import { formatCurrency } from "@/lib/currency/format-currency";
 import { listCategoryOptions } from "@/features/categories/repositories/category-repository";
@@ -114,7 +115,7 @@ export async function FixedExpenseList() {
                 <input type="hidden" name="id" value={expense.id} />
                 <input type="hidden" name="fixed_expense_id" value={expense.fixed_expense_id ?? ""} />
                 <input type="hidden" name="estimated_amount" value={expense.estimated_amount ?? expense.amount} />
-                <input type="number" name="amount" step="0.01" min="0.01" defaultValue={expense.amount} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
+                <CurrencyInput name="amount" defaultValue={expense.amount} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required min={0.01} />
                 <input type="date" name="due_date" defaultValue={expense.due_date} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
                 <select name="status" defaultValue={expense.status} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                   <option value="pending">Pendente</option>

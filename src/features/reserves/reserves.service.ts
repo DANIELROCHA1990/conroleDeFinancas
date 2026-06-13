@@ -1,12 +1,13 @@
 import { reserveFormSchema, reserveTransactionSchema } from "@/features/reserves/reserves.schema";
+import { parseCurrencyInput } from "@/lib/currency/parse-currency";
 
 export function parseReserveInput(formData: FormData) {
   return reserveFormSchema.parse({
     id: formData.get("id") || undefined,
     name: formData.get("name"),
     objective: formData.get("objective") || null,
-    target_amount: formData.get("target_amount"),
-    current_amount: formData.get("current_amount"),
+    target_amount: parseCurrencyInput(formData.get("target_amount")),
+    current_amount: parseCurrencyInput(formData.get("current_amount")),
     target_date: formData.get("target_date") || null,
     status: formData.get("status"),
   });
@@ -16,7 +17,7 @@ export function parseReserveTransactionInput(formData: FormData) {
   return reserveTransactionSchema.parse({
     reserve_id: formData.get("reserve_id"),
     transaction_type: formData.get("transaction_type"),
-    amount: formData.get("amount"),
+    amount: parseCurrencyInput(formData.get("amount")),
     description: formData.get("description") || null,
   });
 }

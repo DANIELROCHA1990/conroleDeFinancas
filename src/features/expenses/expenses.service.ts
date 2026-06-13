@@ -1,11 +1,14 @@
 import { expenseFormSchema } from "@/features/expenses/expenses.schema";
+import { parseCurrencyInput } from "@/lib/currency/parse-currency";
 
 export function parseExpenseInput(formData: FormData) {
   return expenseFormSchema.parse({
     id: formData.get("id") || undefined,
     description: formData.get("description"),
-    amount: formData.get("amount"),
-    estimated_amount: formData.get("estimated_amount") || null,
+    amount: parseCurrencyInput(formData.get("amount")),
+    estimated_amount: formData.get("estimated_amount")
+      ? parseCurrencyInput(formData.get("estimated_amount"))
+      : null,
     due_date: formData.get("due_date"),
     competence_month: formData.get("competence_month") || null,
     fixed_expense_id: formData.get("fixed_expense_id") || null,

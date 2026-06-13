@@ -1,3 +1,4 @@
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { saveCreditCardAction } from "@/features/credit-cards/credit-cards.actions";
 import type { CreditCardListItem } from "@/features/credit-cards/repositories/credit-card-repository";
@@ -9,7 +10,7 @@ export function CreditCardForm({ card }: { card?: CreditCardListItem }) {
       <div className="grid gap-3 md:grid-cols-2">
         <input name="name" defaultValue={card?.name} placeholder="Nome do cartao" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
         <input name="bank_name" defaultValue={card?.bank_name} placeholder="Banco" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
-        <input name="limit_amount" type="number" step="0.01" min="0.01" defaultValue={card?.limit_amount} placeholder="Limite" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
+        <CurrencyInput name="limit_amount" defaultValue={card?.limit_amount} placeholder="Limite" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required min={0.01} />
         <input name="last_four_digits" inputMode="numeric" maxLength={4} defaultValue={card?.last_four_digits ?? ""} placeholder="Ultimos 4 digitos" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" />
         <input name="best_purchase_day" type="number" min="1" max="31" defaultValue={card?.best_purchase_day ?? ""} placeholder="Melhor dia de compra" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" />
         <input name="closing_day" type="number" min="1" max="31" defaultValue={card?.closing_day} placeholder="Dia de fechamento" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />

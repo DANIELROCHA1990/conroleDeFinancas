@@ -1,11 +1,12 @@
 import { fixedExpenseFormSchema } from "@/features/fixed-expenses/fixed-expenses.schema";
+import { parseCurrencyInput } from "@/lib/currency/parse-currency";
 
 export function parseFixedExpenseInput(formData: FormData) {
   return fixedExpenseFormSchema.parse({
     id: formData.get("id") || undefined,
     name: formData.get("name"),
     amount_mode: formData.get("amount_mode"),
-    default_amount: formData.get("default_amount"),
+    default_amount: parseCurrencyInput(formData.get("default_amount")),
     due_day: formData.get("due_day"),
     notify_before_days: formData.get("notify_before_days"),
     category_id: formData.get("category_id"),

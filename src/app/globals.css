@@ -58,9 +58,16 @@ textarea {
   border-color: rgba(148, 163, 184, 0.24);
 }
 
+input:not([type="email"]):not([type="password"]):not([type="number"]):not([type="date"]):not([type="hidden"]),
+textarea,
+select {
+  text-transform: uppercase;
+}
+
 input::placeholder,
 textarea::placeholder {
   color: #7a8ca1;
+  text-transform: uppercase;
 }
 
 select option {

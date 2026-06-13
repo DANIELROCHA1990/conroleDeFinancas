@@ -12,6 +12,7 @@ import {
   updateFixedExpense,
 } from "@/features/fixed-expenses/repositories/fixed-expense-repository";
 import { updateGeneratedFixedExpense } from "@/features/expenses/repositories/expense-repository";
+import { parseCurrencyInput } from "@/lib/currency/parse-currency";
 
 export async function saveFixedExpenseAction(formData: FormData) {
   const user = await requireUser();
@@ -54,8 +55,8 @@ export async function deleteFixedExpenseAction(formData: FormData) {
 export async function updateGeneratedFixedExpenseAction(formData: FormData) {
   const user = await requireUser();
   await updateGeneratedFixedExpense(String(formData.get("id")), user.id, {
-    amount: Number(formData.get("amount")),
-    estimated_amount: Number(formData.get("estimated_amount")),
+    amount: Number(parseCurrencyInput(formData.get("amount"))),
+    estimated_amount: Number(parseCurrencyInput(formData.get("estimated_amount"))),
     due_date: String(formData.get("due_date")),
     status: String(formData.get("status")) as "pending" | "paid" | "late" | "cancelled",
     update_default_amount: String(formData.get("update_default_amount")) === "true",

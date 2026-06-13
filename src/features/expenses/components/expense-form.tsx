@@ -1,3 +1,4 @@
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { saveExpenseAction } from "@/features/expenses/expenses.actions";
 import type { ExpenseListItem } from "@/features/expenses/repositories/expense-repository";
@@ -16,7 +17,7 @@ export function ExpenseForm({
       {expense ? <input type="hidden" name="id" value={expense.id} /> : null}
       <div className="grid gap-3 md:grid-cols-2">
         <input name="description" defaultValue={expense?.description} placeholder="Descricao" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
-        <input name="amount" type="number" step="0.01" min="0.01" defaultValue={expense?.amount} placeholder="Valor" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
+        <CurrencyInput name="amount" defaultValue={expense?.amount} placeholder="Valor" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required min={0.01} />
         <input name="due_date" type="date" defaultValue={expense?.due_date} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
         <input name="paid_at" type="date" defaultValue={expense?.paid_at ?? ""} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" />
         <select name="category_id" defaultValue={expense?.category_id ?? ""} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required>

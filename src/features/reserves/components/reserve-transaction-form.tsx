@@ -1,3 +1,4 @@
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { addReserveTransactionAction } from "@/features/reserves/reserves.actions";
 
@@ -10,7 +11,7 @@ export function ReserveTransactionForm({ reserveId }: { reserveId: string }) {
           <option value="deposit">Aporte</option>
           <option value="withdrawal">Retirada</option>
         </select>
-        <input name="amount" type="number" step="0.01" min="0.01" placeholder="Valor" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
+        <CurrencyInput name="amount" placeholder="Valor" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required min={0.01} />
         <input name="description" placeholder="Descricao" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" />
       </div>
       <SubmitButton pendingLabel="Salvando..." className="rounded-2xl bg-white/10 px-4 py-3 font-medium">

@@ -1,3 +1,4 @@
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { saveIncomeAction } from "@/features/incomes/incomes.actions";
 import type { IncomeListItem } from "@/features/incomes/repositories/income-repository";
@@ -16,7 +17,7 @@ export function IncomeForm({
       {income ? <input type="hidden" name="id" value={income.id} /> : null}
       <div className="grid gap-3 md:grid-cols-2">
         <input name="description" defaultValue={income?.description} placeholder="Descricao" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
-        <input name="amount" type="number" step="0.01" min="0.01" defaultValue={income?.amount} placeholder="Valor" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
+        <CurrencyInput name="amount" defaultValue={income?.amount} placeholder="Valor" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required min={0.01} />
         <input name="received_on" type="date" defaultValue={income?.received_on} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
         <select name="category_id" defaultValue={income?.category_id ?? ""} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required>
           <option value="" disabled>Categoria</option>

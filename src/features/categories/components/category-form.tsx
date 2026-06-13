@@ -1,3 +1,4 @@
+import { LucideIconPicker } from "@/components/ui/lucide-icon-picker";
 import { saveCategoryAction } from "@/features/categories/categories.actions";
 import { SubmitButton } from "@/components/ui/submit-button";
 
@@ -37,13 +38,7 @@ export function CategoryForm({ category }: { category?: CategoryRecord }) {
           defaultValue={category?.color ?? "#4ADE80"}
           className="h-12 rounded-2xl border border-white/10 bg-white/5 px-2 py-2"
         />
-        <input
-          name="icon"
-          defaultValue={category?.icon}
-          placeholder="Icone"
-          className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
-          required
-        />
+        <LucideIconPicker name="icon" defaultValue={category?.icon} />
       </div>
       <input type="hidden" name="active" value={category?.active ? "true" : "true"} />
       <SubmitButton
