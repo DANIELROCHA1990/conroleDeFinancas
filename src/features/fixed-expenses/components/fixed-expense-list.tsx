@@ -1,5 +1,6 @@
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { ExpandableCard } from "@/components/ui/expandable-card";
+import { ServerActionButtonForm } from "@/components/ui/server-action-button-form";
 import { SectionHeader } from "@/components/ui/section-header";
 import { formatCurrency } from "@/lib/currency/format-currency";
 import { requireUser } from "@/features/auth/server/require-user";
@@ -7,6 +8,7 @@ import { listCategoryOptions } from "@/features/categories/repositories/category
 import {
   deleteFixedExpenseAction,
   toggleFixedExpenseAction,
+  updateGeneratedFixedExpenseAssignmentAction,
   updateGeneratedFixedExpenseAction,
 } from "@/features/fixed-expenses/fixed-expenses.actions";
 import { FixedExpenseForm } from "@/features/fixed-expenses/components/fixed-expense-form";
@@ -15,9 +17,11 @@ import {
   listFixedExpenses,
   listGeneratedFixedExpenses,
 } from "@/features/fixed-expenses/repositories/fixed-expense-repository";
+import { listActivePaymentAssignees } from "@/features/settings/repositories/payment-assignee-repository";
 import {
   calculateEstimatedVsRealVariation,
   calculateNextDueDate,
+  resolveNextScheduledCompetenceMonth,
 } from "@/features/fixed-expenses/fixed-expenses.service";
 
 export async function FixedExpenseList() {
@@ -26,9 +30,10 @@ export async function FixedExpenseList() {
     listFixedExpenses(),
     listCategoryOptions("expense"),
   ]);
+  const assignees = await listActivePaymentAssignees();
   await Promise.all(expenses.map((expense) => ensureMonthlyFixedExpenseGenerated(expense, user.id)));
   const generatedExpenses = await listGeneratedFixedExpenses();
-  const month = new Date();
+  const now = new Date();
 
   return (
     <section className="space-y-6">
@@ -37,14 +42,27 @@ export async function FixedExpenseList() {
         title="Recorrencias mensais"
         description="Defina contas recorrentes e ajuste o valor de cada mes sem perder o historico."
       />
-      <FixedExpenseForm categories={categories} />
+      <FixedExpenseForm categories={categories} assignees={assignees} />
       <div className="grid gap-4 md:grid-cols-2">
         {expenses.length === 0 ? (
           <article className="glass-card rounded-[1.5rem] p-5 text-sm text-slate-300">
             Nenhuma conta fixa cadastrada.
           </article>
         ) : null}
+        {assignees.length === 0 ? (
+          <article className="glass-card rounded-[1.5rem] p-5 text-sm text-rose-200">
+            Cadastre ao menos um responsavel ativo em Configuracoes para criar contas fixas com repasse.
+          </article>
+        ) : null}
         {expenses.map((expense) => (
+          (() => {
+            const nextCompetenceMonth = resolveNextScheduledCompetenceMonth({
+              startCompetenceMonth: expense.start_competence_month,
+              referenceDate: now,
+            });
+            const nextReferenceMonth = new Date(`${nextCompetenceMonth}T00:00:00Z`);
+
+            return (
           <ExpandableCard
             key={expense.id}
             summary={(
@@ -54,18 +72,24 @@ export async function FixedExpenseList() {
                   {expense.amount_mode === "fixed" ? "Valor fixo" : "Valor variavel"} | Vence dia {expense.due_day}
                 </p>
                 <p className="mt-2 text-sm text-slate-300">
-                  Valor padrao: {formatCurrency(expense.default_amount)} | {(expense.categories as { name?: string } | null)?.name ?? "Sem categoria"}
+                  {expense.amount_mode === "variable" ? "Valor base sugerido" : "Valor padrao"}: {formatCurrency(expense.default_amount)} | {(expense.categories as { name?: string } | null)?.name ?? "Sem categoria"}
+                </p>
+                <p className="mt-2 text-sm text-slate-300">
+                  Atribuicao: {expense.assignment_mode === "all" ? "Todos" : assignees.find((item) => item.id === expense.assignee_id)?.name ?? "Responsavel inativo"}
+                </p>
+                <p className="mt-2 text-sm text-slate-300">
+                  Competencia inicial: {expense.start_competence_month.slice(0, 7)}
                 </p>
                 {expense.is_active ? (
                   <p className="mt-2 text-sm text-slate-400">
-                    Proxima data: {calculateNextDueDate(expense.due_day, month)}
+                    Proxima data: {calculateNextDueDate(expense.due_day, nextReferenceMonth)}
                   </p>
                 ) : null}
               </>
             )}
           >
             <div className="space-y-4">
-              <FixedExpenseForm categories={categories} expense={expense} />
+              <FixedExpenseForm categories={categories} assignees={assignees} expense={expense} />
               <div className="flex gap-3">
                 <form action={toggleFixedExpenseAction} className="flex-1">
                   <input type="hidden" name="id" value={expense.id} />
@@ -74,15 +98,19 @@ export async function FixedExpenseList() {
                     {expense.is_active ? "Inativar" : "Reativar"}
                   </button>
                 </form>
-                <form action={deleteFixedExpenseAction} className="flex-1">
+                <ServerActionButtonForm
+                  action={deleteFixedExpenseAction}
+                  className="flex-1"
+                  buttonClassName="w-full rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+                  pendingLabel="Excluindo..."
+                >
                   <input type="hidden" name="id" value={expense.id} />
-                  <button className="w-full rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
-                    Excluir
-                  </button>
-                </form>
+                </ServerActionButtonForm>
               </div>
             </div>
           </ExpandableCard>
+            );
+          })()
         ))}
       </div>
 
@@ -115,6 +143,9 @@ export async function FixedExpenseList() {
                     Valor estimado: {formatCurrency(expense.estimated_amount ?? expense.amount)}
                   </p>
                   <p className="mt-1 text-sm text-slate-300">
+                    {expense.amount !== (expense.estimated_amount ?? expense.amount) ? "Valor real ajustado" : "Valor mensal sugerido"}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-300">
                     Valor real: {formatCurrency(expense.amount)}
                   </p>
                   <p className="mt-1 text-sm text-slate-300">
@@ -127,7 +158,8 @@ export async function FixedExpenseList() {
               <form action={updateGeneratedFixedExpenseAction} className="grid gap-3 md:grid-cols-2">
                 <input type="hidden" name="id" value={expense.id} />
                 <input type="hidden" name="fixed_expense_id" value={expense.fixed_expense_id ?? ""} />
-                <input type="hidden" name="estimated_amount" value={expense.estimated_amount ?? expense.amount} />
+                <input type="hidden" name="competence_month" value={expense.competence_month ?? ""} />
+                <input type="hidden" name="estimated_amount" value={formatCurrency(expense.estimated_amount ?? expense.amount)} />
                 <CurrencyInput name="amount" defaultValue={expense.amount} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required min={0.01} />
                 <input type="date" name="due_date" defaultValue={expense.due_date} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
                 <select name="status" defaultValue={expense.status} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
@@ -142,6 +174,24 @@ export async function FixedExpenseList() {
                 </select>
                 <button className="rounded-2xl bg-emerald-400 px-4 py-3 font-medium text-slate-950 md:col-span-2">
                   Salvar valor real do mes
+                </button>
+              </form>
+              <form action={updateGeneratedFixedExpenseAssignmentAction} className="grid gap-3 md:grid-cols-2">
+                <input type="hidden" name="expense_id" value={expense.id} />
+                <input type="hidden" name="fixed_expense_id" value={expense.fixed_expense_id ?? ""} />
+                <input type="hidden" name="competence_month" value={expense.competence_month ?? ""} />
+                <input type="hidden" name="amount" value={expense.amount} />
+                <select name="assignment_mode" defaultValue="single" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <option value="single">Atribuicao retroativa individual</option>
+                  {assignees.length > 1 ? <option value="all">Atribuicao retroativa: Todos</option> : null}
+                </select>
+                <select name="assignee_id" defaultValue={assignees[0]?.id ?? ""} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  {assignees.map((assignee) => (
+                    <option key={assignee.id} value={assignee.id}>{assignee.name}</option>
+                  ))}
+                </select>
+                <button className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-medium md:col-span-2">
+                  Salvar atribuicao deste mes
                 </button>
               </form>
             </ExpandableCard>

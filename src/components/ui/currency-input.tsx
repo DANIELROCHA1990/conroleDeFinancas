@@ -1,32 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-
-function formatCurrencyValue(value: string) {
-  const digits = value.replace(/\D/g, "");
-
-  if (!digits) {
-    return "";
-  }
-
-  const amount = Number(digits) / 100;
-
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(amount);
-}
-
-function toMaskedDefaultValue(value: number | null | undefined) {
-  if (typeof value !== "number" || Number.isNaN(value)) {
-    return "";
-  }
-
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
-}
+import { formatCurrencyInputValue, toMaskedCurrencyDefaultValue } from "@/lib/currency/format-currency";
 
 export function CurrencyInput({
   name,
@@ -44,7 +19,7 @@ export function CurrencyInput({
   min?: number;
 }) {
   const inputId = useId();
-  const [displayValue, setDisplayValue] = useState(() => toMaskedDefaultValue(defaultValue));
+  const [displayValue, setDisplayValue] = useState(() => toMaskedCurrencyDefaultValue(defaultValue));
 
   return (
     <input
@@ -58,7 +33,7 @@ export function CurrencyInput({
       required={required}
       aria-label={placeholder ?? name}
       onChange={(event) => {
-        setDisplayValue(formatCurrencyValue(event.target.value));
+        setDisplayValue(formatCurrencyInputValue(event.target.value));
       }}
       onBlur={() => {
         if (displayValue && min !== undefined) {
@@ -66,7 +41,7 @@ export function CurrencyInput({
           const amount = Number(digits) / 100;
 
           if (amount < min) {
-            setDisplayValue(toMaskedDefaultValue(min));
+            setDisplayValue(toMaskedCurrencyDefaultValue(min));
           }
         }
       }}

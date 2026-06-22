@@ -36,3 +36,16 @@ export async function markExpensePaidAction(formData: FormData) {
   revalidatePath("/despesas");
   revalidatePath("/dashboard");
 }
+
+export async function updateExpenseStatusAction(formData: FormData) {
+  const user = await requireUser();
+  const status = String(formData.get("status")) as "pending" | "paid" | "late" | "cancelled";
+
+  await updateExpense(String(formData.get("id")), user.id, {
+    status,
+    paid_at: status === "paid" ? new Date().toISOString().slice(0, 10) : null,
+  });
+
+  revalidatePath("/despesas");
+  revalidatePath("/dashboard");
+}

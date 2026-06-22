@@ -1,8 +1,10 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { FixedExpenseFormValues } from "@/features/fixed-expenses/fixed-expenses.schema";
 import {
+  compareCompetenceMonth,
   generateRecurringExpenseFromFixedExpense,
   getCompetenceMonth,
+  listCompetenceMonthsBetween,
   shouldGenerateMonthlyExpense,
 } from "@/features/fixed-expenses/fixed-expenses.service";
 
@@ -19,6 +21,10 @@ export type FixedExpenseListItem = {
   notify_before_days: number;
   is_active: boolean;
   category_id: string | null;
+  assignment_mode: "single" | "all";
+  assignee_id: string | null;
+  start_competence_month: string;
+  created_at?: string;
   categories: { name: string } | null;
 };
 
@@ -37,14 +43,14 @@ export async function listFixedExpenses() {
   const supabase = await getSupabaseServerClient();
   const result = await supabase
     .from("fixed_expenses")
-    .select("id, name, amount_mode, default_amount, due_day, notify_before_days, is_active, category_id, categories(name)")
+    .select("id, name, amount_mode, default_amount, due_day, notify_before_days, is_active, category_id, assignment_mode, assignee_id, start_competence_month, created_at, categories(name)")
     .is("deleted_at", null)
     .order("due_day");
 
   if (result.error && isMissingColumnError(result.error.message)) {
     const fallback = await supabase
       .from("fixed_expenses")
-      .select("id, name, default_amount, due_day, notify_before_days, is_active, category_id, categories(name)")
+      .select("id, name, default_amount, due_day, notify_before_days, is_active, category_id, start_competence_month, created_at, categories(name)")
       .is("deleted_at", null)
       .order("due_day");
 
@@ -58,6 +64,9 @@ export async function listFixedExpenses() {
       return {
         ...fixedExpense,
         amount_mode: "fixed" as const,
+        assignment_mode: "single" as const,
+        assignee_id: null,
+        start_competence_month: fixedExpense.created_at?.slice(0, 10) ?? getCompetenceMonth(new Date()),
       };
     }) as FixedExpenseListItem[];
   }
@@ -97,13 +106,16 @@ export async function createFixedExpense(payload: {
   due_day: number;
   notify_before_days: number;
   category_id: string;
+  start_competence_month: string;
+  assignment_mode: "single" | "all";
+  assignee_id: string | null;
   is_active: boolean;
 }) {
   const supabase = await getSupabaseServerClient();
   const result = await supabase
     .from("fixed_expenses")
     .insert(payload)
-    .select("id, name, amount_mode, default_amount, due_day, notify_before_days, is_active, category_id, categories(name)")
+    .select("id, name, amount_mode, default_amount, due_day, notify_before_days, is_active, category_id, assignment_mode, assignee_id, start_competence_month, created_at, categories(name)")
     .single();
 
   if (result.error && isMissingColumnError(result.error.message)) {
@@ -114,12 +126,13 @@ export async function createFixedExpense(payload: {
       due_day: payload.due_day,
       notify_before_days: payload.notify_before_days,
       category_id: payload.category_id,
+      start_competence_month: payload.start_competence_month,
       is_active: payload.is_active,
     };
     const fallback = await supabase
       .from("fixed_expenses")
       .insert(legacyPayload)
-      .select("id, name, default_amount, due_day, notify_before_days, is_active, category_id, categories(name)")
+      .select("id, name, default_amount, due_day, notify_before_days, is_active, category_id, created_at, categories(name)")
       .single();
 
     if (fallback.error) {
@@ -129,6 +142,9 @@ export async function createFixedExpense(payload: {
     return {
       ...(fallback.data as Omit<FixedExpenseListItem, "amount_mode">),
       amount_mode: "fixed" as const,
+      assignment_mode: "single" as const,
+      assignee_id: null,
+      start_competence_month: payload.start_competence_month,
     } as FixedExpenseListItem;
   }
 
@@ -151,6 +167,7 @@ export async function updateFixedExpense(id: string, userId: string, payload: Pa
       due_day: payload.due_day,
       notify_before_days: payload.notify_before_days,
       category_id: payload.category_id,
+      start_competence_month: payload.start_competence_month,
       is_active: payload.is_active,
     };
     const fallback = await supabase.from("fixed_expenses").update(legacyPayload).eq("id", id).eq("user_id", userId);
@@ -186,44 +203,68 @@ export async function ensureMonthlyFixedExpenseGenerated(fixedExpense: FixedExpe
   }
 
   const supabase = await getSupabaseServerClient();
-  const competenceMonth = getCompetenceMonth(month);
-  const countResult = await supabase
+  const currentCompetenceMonth = getCompetenceMonth(month);
+  if (compareCompetenceMonth(fixedExpense.start_competence_month, currentCompetenceMonth) > 0) {
+    return;
+  }
+
+  const expectedMonths = listCompetenceMonthsBetween(fixedExpense.start_competence_month, currentCompetenceMonth);
+  const existingExpensesResult = await supabase
     .from("expenses")
-    .select("id", { head: true, count: "exact" })
+    .select("id, amount, estimated_amount, competence_month")
     .eq("user_id", userId)
     .eq("fixed_expense_id", fixedExpense.id)
-    .eq("competence_month", competenceMonth)
+    .in("competence_month", expectedMonths)
     .is("deleted_at", null);
 
-  if (countResult.error && isMissingColumnError(countResult.error.message)) {
+  if (existingExpensesResult.error && isMissingColumnError(existingExpensesResult.error.message)) {
     return;
   }
 
-  if (countResult.error) {
-    throw new Error(`Falha ao verificar duplicidade da conta fixa: ${countResult.error.message}`);
+  if (existingExpensesResult.error) {
+    throw new Error(`Falha ao verificar duplicidade da conta fixa: ${existingExpensesResult.error.message}`);
   }
 
-  if (!shouldGenerateMonthlyExpense(countResult.count ?? 0)) {
-    return;
-  }
+  const existingByMonth = new Map(
+    (existingExpensesResult.data ?? [])
+      .filter((item) => item.competence_month)
+      .map((item) => [String(item.competence_month), item]),
+  );
 
-  const payload = generateRecurringExpenseFromFixedExpense({
-    fixedExpenseId: fixedExpense.id,
-    userId,
-    categoryId: fixedExpense.category_id,
-    name: fixedExpense.name,
-    defaultAmount: fixedExpense.default_amount,
-    dueDay: fixedExpense.due_day,
-    month,
-  });
+  const { replaceMonthlyAllocationsForExpense } = await import("@/features/fixed-expenses/repositories/fixed-expense-allocation-repository");
 
-  const insertResult = await supabase.from("expenses").insert(payload);
+  for (const competenceMonth of expectedMonths) {
+    if (!shouldGenerateMonthlyExpense(existingByMonth.has(competenceMonth) ? 1 : 0)) {
+      continue;
+    }
 
-  if (insertResult.error && isMissingColumnError(insertResult.error.message)) {
-    return;
-  }
+    const targetMonth = new Date(`${competenceMonth}T00:00:00Z`);
+    const payload = generateRecurringExpenseFromFixedExpense({
+      fixedExpenseId: fixedExpense.id,
+      userId,
+      categoryId: fixedExpense.category_id,
+      name: fixedExpense.name,
+      defaultAmount: fixedExpense.default_amount,
+      dueDay: fixedExpense.due_day,
+      month: targetMonth,
+    });
 
-  if (insertResult.error) {
-    throw new Error(`Falha ao gerar despesa mensal da conta fixa: ${insertResult.error.message}`);
+    const insertResult = await supabase.from("expenses").insert(payload).select("id, amount, estimated_amount, competence_month").single();
+
+    if (insertResult.error && isMissingColumnError(insertResult.error.message)) {
+      return;
+    }
+
+    if (insertResult.error || !insertResult.data) {
+      throw new Error(`Falha ao gerar despesa mensal da conta fixa: ${insertResult.error?.message ?? "Sem retorno da despesa criada"}`);
+    }
+
+    await replaceMonthlyAllocationsForExpense({
+      userId,
+      fixedExpense,
+      expenseId: insertResult.data.id,
+      competenceMonth: insertResult.data.competence_month ?? competenceMonth,
+      amount: insertResult.data.amount ?? insertResult.data.estimated_amount ?? fixedExpense.default_amount,
+    });
   }
 }

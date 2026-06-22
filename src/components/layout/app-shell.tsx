@@ -1,11 +1,12 @@
 "use client";
 
-import { Bell, ChevronLeft, ChevronRight, CreditCard, Landmark, LayoutDashboard, PiggyBank, Settings, Tags, Wallet } from "lucide-react";
+import { Bell, ChevronLeft, ChevronRight, CreditCard, Landmark, LayoutDashboard, LogOut, PiggyBank, Settings, Tags, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { MobileNav, type MobileNavIconName } from "@/components/layout/mobile-nav";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { signOut } from "@/lib/supabase/auth-actions";
 
 const navItems: Array<{
@@ -92,14 +93,20 @@ export function AppShell({
             );
           })}
         </nav>
+        <div className="mt-3">
+          <ThemeToggle collapsed={collapsed} />
+        </div>
         <form action={signOut}>
           <button
             type="submit"
-            className={`mt-3 rounded-2xl border border-slate-200 bg-white/90 px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50 ${
-              collapsed ? "w-full" : "w-full"
+            aria-label="Sair"
+            title="Sair"
+            className={`mt-3 w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:bg-slate-800 ${
+              collapsed ? "flex justify-center" : "flex items-center gap-3"
             }`}
           >
-            {collapsed ? "Sair" : "Sair"}
+            <LogOut className="h-4 w-4 shrink-0" />
+            {collapsed ? null : <span>Sair</span>}
           </button>
         </form>
       </aside>

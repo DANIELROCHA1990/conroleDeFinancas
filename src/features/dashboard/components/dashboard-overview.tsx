@@ -1,11 +1,21 @@
+import { MonthlyRepassChart } from "@/components/charts/monthly-repass-chart";
 import { MonthlyBalanceChart } from "@/components/charts/monthly-balance-chart";
 import { SpendingByCategoryChart } from "@/components/charts/spending-by-category-chart";
 import { SectionHeader } from "@/components/ui/section-header";
+import { DashboardCards } from "@/features/dashboard/components/dashboard-cards";
 import { buildDashboardSummary } from "@/features/dashboard/services/dashboard-service";
 import { formatCurrency } from "@/lib/currency/format-currency";
 
-export async function DashboardOverview() {
-  const summary = await buildDashboardSummary();
+function formatCompetenceMonthLabel(value: string) {
+  const date = new Date(`${value.slice(0, 7)}-01T00:00:00`);
+  return new Intl.DateTimeFormat("pt-BR", {
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+export async function DashboardOverview({ selectedMonth }: { selectedMonth?: string }) {
+  const summary = await buildDashboardSummary(selectedMonth);
 
   return (
     <div className="space-y-6">
@@ -14,19 +24,77 @@ export async function DashboardOverview() {
         title="Visao consolidada"
         description="Acompanhe saldos, gastos e distribuicao das suas financas em um unico lugar."
       />
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {summary.cards.map((card) => (
-          <article key={card.label} className="glass-card rounded-[1.75rem] p-5">
-            <p className="text-sm text-slate-300">{card.label}</p>
-            <strong className="mt-4 block text-3xl font-semibold">
-              {formatCurrency(card.value)}
-            </strong>
-          </article>
-        ))}
-      </section>
+      <DashboardCards
+        cards={summary.cards.map((card) => ({
+          ...card,
+          details: card.details.map((detail) => ({
+            ...detail,
+            value: detail.label.toLowerCase().includes("quantidade") || detail.label.toLowerCase().includes("parcelas")
+              ? detail.value
+              : formatCurrency(Number(detail.value)),
+          })),
+        }))}
+      />
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <MonthlyBalanceChart data={summary.monthlyBalance} />
         <SpendingByCategoryChart data={summary.categories} />
+      </section>
+      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="space-y-4">
+          <div className="glass-card rounded-[1.75rem] p-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h2 className="text-lg font-medium">Repasse mensal</h2>
+                <p className="mt-1 text-sm text-slate-300">Resumo das contas fixas por responsavel na competencia selecionada.</p>
+              </div>
+              <form method="get">
+                <select name="month" defaultValue={summary.repasseMonth} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  {summary.repasseMonths.map((month) => (
+                    <option key={month} value={month}>{formatCompetenceMonthLabel(month)}</option>
+                  ))}
+                </select>
+              </form>
+            </div>
+          </div>
+          <MonthlyRepassChart data={summary.monthlyRepasses} />
+        </div>
+        <article className="glass-card rounded-[1.75rem] p-5">
+          <h3 className="text-lg font-medium">Detalhamento do repasse</h3>
+          <p className="mt-1 text-sm text-slate-300">{formatCompetenceMonthLabel(summary.repasseMonth)}</p>
+          <div className="mt-4 space-y-3">
+            {summary.monthlyRepassBreakdown.length === 0 ? (
+              <p className="text-sm text-slate-300">Nenhum repasse calculado para este mes.</p>
+            ) : null}
+            {summary.monthlyRepassBreakdown.map((item) => (
+              <div key={item.fixedExpenseId} className="rounded-[1.25rem] border border-white/10 bg-white/20 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-slate-300">Conta</p>
+                    <h4 className="font-medium">{item.fixedExpenseName}</h4>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-slate-300">Valor total</p>
+                    <strong>{formatCurrency(item.totalAmount)}</strong>
+                  </div>
+                </div>
+                <div className="mt-4 space-y-2">
+                  {item.allocations.map((allocation) => (
+                    <div key={`${item.fixedExpenseId}-${allocation.assigneeName}`} className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600">{allocation.assigneeName}</span>
+                      <strong>{formatCurrency(allocation.amount)}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {summary.monthlyRepassBreakdown.length > 0 ? (
+              <div className="flex items-center justify-between border-t border-white/10 pt-4 text-sm">
+                <span className="text-slate-600">Total consolidado do repasse</span>
+                <strong>{formatCurrency(summary.monthlyRepassGrandTotal)}</strong>
+              </div>
+            ) : null}
+          </div>
+        </article>
       </section>
     </div>
   );

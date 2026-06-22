@@ -4,7 +4,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import { formatCurrency } from "@/lib/currency/format-currency";
 
-const COLORS = ["#4ade80", "#38bdf8", "#fb7185", "#fbbf24", "#c084fc"];
+const COLORS = ["#0f9f87", "#38bdf8", "#fb7185", "#f59e0b", "#6366f1", "#14b8a6", "#eab308"];
 
 function formatChartCurrency(value: number | string | readonly (number | string)[] | undefined) {
   const rawValue = Array.isArray(value) ? value[0] : value;
@@ -12,17 +12,17 @@ function formatChartCurrency(value: number | string | readonly (number | string)
   return Number.isFinite(amount) ? formatCurrency(amount) : "";
 }
 
-export function SpendingByCategoryChart({
+export function MonthlyRepassChart({
   data,
 }: {
   data: Array<{ name: string; value: number }>;
 }) {
   return (
     <div className="glass-card h-80 rounded-[1.75rem] p-4">
-      <h3 className="text-lg font-medium">Gastos por categoria</h3>
+      <h3 className="text-lg font-medium">Repasse mensal</h3>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
-          <Pie data={data} dataKey="value" nameKey="name" innerRadius={70} outerRadius={100}>
+          <Pie data={data} dataKey="value" nameKey="name" innerRadius={70} outerRadius={105}>
             {data.map((entry, index) => (
               <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
             ))}

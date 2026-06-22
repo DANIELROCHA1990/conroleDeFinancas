@@ -232,6 +232,8 @@ export type Database = {
       fixed_expenses: {
         Row: {
           amount_mode: "fixed" | "variable";
+          assignment_mode: "single" | "all";
+          assignee_id: string | null;
           category_id: string | null;
           created_at: string;
           default_amount: number;
@@ -242,11 +244,14 @@ export type Database = {
           name: string;
           notes_encrypted: string | null;
           notify_before_days: number;
+          start_competence_month: string;
           updated_at: string;
           user_id: string;
         };
         Insert: {
           amount_mode?: "fixed" | "variable";
+          assignment_mode?: "single" | "all";
+          assignee_id?: string | null;
           category_id?: string | null;
           created_at?: string;
           default_amount: number;
@@ -257,10 +262,39 @@ export type Database = {
           name: string;
           notes_encrypted?: string | null;
           notify_before_days?: number;
+          start_competence_month: string;
           updated_at?: string;
           user_id: string;
         };
         Update: Partial<Database["public"]["Tables"]["fixed_expenses"]["Insert"]>;
+        Relationships: [];
+      };
+      fixed_expense_monthly_allocations: {
+        Row: {
+          amount: number;
+          assignee_id: string | null;
+          assignee_name: string;
+          competence_month: string;
+          created_at: string;
+          expense_id: string;
+          fixed_expense_id: string;
+          id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          amount: number;
+          assignee_id?: string | null;
+          assignee_name: string;
+          competence_month: string;
+          created_at?: string;
+          expense_id: string;
+          fixed_expense_id: string;
+          id?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["fixed_expense_monthly_allocations"]["Insert"]>;
         Relationships: [];
       };
       financial_accounts: {
@@ -349,6 +383,28 @@ export type Database = {
           user_id: string;
         };
         Update: Partial<Database["public"]["Tables"]["notifications"]["Insert"]>;
+        Relationships: [];
+      };
+      payment_assignees: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          deleted_at: string | null;
+          id: string;
+          name: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          name: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["payment_assignees"]["Insert"]>;
         Relationships: [];
       };
       profiles: {

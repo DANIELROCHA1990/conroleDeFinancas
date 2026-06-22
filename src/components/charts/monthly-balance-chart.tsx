@@ -2,6 +2,14 @@
 
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { formatCurrency } from "@/lib/currency/format-currency";
+
+function formatChartCurrency(value: number | string | readonly (number | string)[] | undefined) {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  const amount = typeof rawValue === "number" ? rawValue : Number(rawValue);
+  return Number.isFinite(amount) ? formatCurrency(amount) : "";
+}
+
 export function MonthlyBalanceChart({
   data,
 }: {
@@ -20,8 +28,8 @@ export function MonthlyBalanceChart({
           </defs>
           <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
           <XAxis dataKey="month" stroke="#9fb2cc" />
-          <YAxis stroke="#9fb2cc" />
-          <Tooltip />
+          <YAxis stroke="#9fb2cc" tickFormatter={formatChartCurrency} />
+          <Tooltip formatter={formatChartCurrency} />
           <Area type="monotone" dataKey="balance" stroke="#4ade80" fill="url(#balance)" />
         </AreaChart>
       </ResponsiveContainer>
