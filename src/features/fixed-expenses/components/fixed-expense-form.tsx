@@ -1,4 +1,8 @@
+import { Coins, Repeat } from "lucide-react";
+
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { FormField } from "@/components/ui/form-field";
+import { MaskedDateInput } from "@/components/ui/masked-date-input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { saveFixedExpenseAction } from "@/features/fixed-expenses/fixed-expenses.actions";
 import { FixedExpenseAssignmentFields } from "@/features/fixed-expenses/components/fixed-expense-assignment-fields";
@@ -17,44 +21,86 @@ export function FixedExpenseForm({
   expense?: FixedExpenseListItem;
   assignees: PaymentAssigneeOption[];
 }) {
+  const isVariable = expense?.amount_mode === "variable";
+
   return (
-    <form action={saveFixedExpenseAction} className="grid gap-3 rounded-[1.25rem] border border-white/10 bg-white/5 p-4">
+    <form action={saveFixedExpenseAction} className="app-panel grid gap-4 rounded-[1.5rem] p-4 sm:p-5">
       {expense ? <input type="hidden" name="id" value={expense.id} /> : null}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[color:var(--text-main)]">
+            {expense ? "Editar conta recorrente" : "Nova conta recorrente"}
+          </h2>
+        </div>
+        <div className="app-chip text-xs">
+          <Repeat className="h-3.5 w-3.5" />
+          <span>{isVariable ? "Valor variavel" : "Valor fixo"}</span>
+        </div>
+      </div>
       <div className="grid gap-3 md:grid-cols-2">
-        <input name="name" defaultValue={expense?.name} placeholder="Nome da conta" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
-        <select name="amount_mode" defaultValue={expense?.amount_mode ?? "fixed"} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-          <option value="fixed">Tipo de valor: Fixo</option>
-          <option value="variable">Tipo de valor: Variavel</option>
-        </select>
-        <CurrencyInput name="default_amount" defaultValue={expense?.default_amount} placeholder={expense?.amount_mode === "variable" ? "Valor base sugerido" : "Valor mensal"} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required min={0.01} />
-        <input name="due_day" type="number" min="1" max="31" defaultValue={expense?.due_day} placeholder="Dia de vencimento" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
-        <input name="start_competence_month" type="month" defaultValue={formatMonthInputValue(expense?.start_competence_month)} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
-        <input name="notify_before_days" type="number" min="0" max="30" defaultValue={expense?.notify_before_days ?? 3} placeholder="Avisar com quantos dias" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3" required />
+        <FormField label="Nome da conta" hint="Use um nome claro para localizar rapidamente.">
+          <input name="name" defaultValue={expense?.name} placeholder="Ex.: Internet residencial" className="app-input" required />
+        </FormField>
+        <FormField label="Tipo de valor" hint="Escolha se a conta muda de valor mes a mes.">
+          <select name="amount_mode" defaultValue={expense?.amount_mode ?? "fixed"} className="app-input">
+            <option value="fixed">Valor fixo</option>
+            <option value="variable">Valor variavel</option>
+          </select>
+        </FormField>
+        <FormField label="Valor" hint={isVariable ? "Informe uma base de referencia para os proximos meses." : "Informe o valor recorrente esperado."}>
+          <CurrencyInput name="default_amount" defaultValue={expense?.default_amount} placeholder="R$ 0,00" className="app-input" required min={0.01} />
+        </FormField>
+        <FormField label="Dia do vencimento" hint="Dia em que a conta normalmente vence.">
+          <input name="due_day" type="number" min="1" max="31" defaultValue={expense?.due_day} placeholder="Ex.: 10" className="app-input" required />
+        </FormField>
+        <FormField label="Competencia inicial" hint="Formato mm/aaaa. A recorrencia comeca a partir deste mes.">
+          <MaskedDateInput
+            name="start_competence_month"
+            mode="month"
+            defaultValue={formatMonthInputValue(expense?.start_competence_month)}
+            placeholder="mm/aaaa"
+            className="app-input"
+            required
+          />
+        </FormField>
+        <FormField label="Aviso antecipado" hint="Quantidade de dias antes do vencimento.">
+          <input name="notify_before_days" type="number" min="0" max="30" defaultValue={expense?.notify_before_days ?? 3} placeholder="Ex.: 3" className="app-input" required />
+        </FormField>
         <FixedExpenseAssignmentFields
           assignees={assignees}
           defaultAssignmentMode={expense?.assignment_mode ?? "single"}
           defaultAssigneeId={expense?.assignee_id ?? null}
         />
-        <select name="category_id" defaultValue={expense?.category_id ?? ""} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 md:col-span-2" required>
-          <option value="" disabled>Categoria</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>{category.name}</option>
-          ))}
-        </select>
+        <FormField label="Categoria" hint="Agrupa a conta nos relatorios e no dashboard." className="md:col-span-2">
+          <select name="category_id" defaultValue={expense?.category_id ?? ""} className="app-input" required>
+            <option value="" disabled>Selecione uma categoria</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>{category.name}</option>
+            ))}
+          </select>
+        </FormField>
       </div>
-      {expense?.amount_mode === "variable" ? (
-        <p className="text-sm text-slate-300">
-          Para contas variaveis, o valor acima funciona como base sugerida. O valor real de cada competencia deve ser ajustado na lista de despesas mensais geradas.
+      <div className="grid gap-2 rounded-[1.25rem] border border-[color:var(--border-soft)] bg-[color:var(--accent-soft)] p-3 text-sm text-[color:var(--accent-strong)]">
+        <p className="inline-flex items-center gap-2 font-medium">
+          <Coins className="h-4 w-4" />
+          {isVariable ? "Contas variaveis pedem revisao mensal do valor real." : "Contas fixas geram lancamentos consistentes e previsiveis."}
         </p>
-      ) : (
-        <p className="text-sm text-slate-300">
-          A competencia inicial define a partir de qual mes esta recorrencia passa a gerar lancamentos.
+        <p>
+          {isVariable
+            ? "Depois da geracao mensal, ajuste o valor cobrado no proprio lancamento do mes."
+            : "A competencia inicial evita geracao retroativa indevida e organiza o historico."}
         </p>
-      )}
+      </div>
       <input type="hidden" name="is_active" value={expense?.is_active === false ? "false" : "true"} />
-      <SubmitButton pendingLabel="Salvando..." className="rounded-2xl bg-emerald-400 px-4 py-3 font-medium text-slate-950">
-        {expense ? "Salvar conta fixa" : "Criar conta fixa"}
-      </SubmitButton>
+      <div className="flex justify-end">
+        <SubmitButton
+          pendingLabel="Salvando..."
+          iconName="check"
+          className="rounded-2xl bg-emerald-400 px-4 py-3 font-medium text-slate-950 shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5"
+        >
+          {expense ? "Salvar conta" : "Criar conta"}
+        </SubmitButton>
+      </div>
     </form>
   );
 }

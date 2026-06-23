@@ -7,31 +7,47 @@ export function ExpandableCard({
   summary,
   children,
   defaultExpanded = false,
+  expanded,
+  onExpandedChange,
   className = "",
 }: {
   summary: React.ReactNode;
   children: React.ReactNode;
   defaultExpanded?: boolean;
+  expanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
   className?: string;
 }) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
+  const isControlled = expanded !== undefined;
+  const isExpanded = isControlled ? expanded : internalExpanded;
+
+  function handleToggle() {
+    const nextExpanded = !isExpanded;
+
+    if (!isControlled) {
+      setInternalExpanded(nextExpanded);
+    }
+
+    onExpandedChange?.(nextExpanded);
+  }
 
   return (
-    <article className={`glass-card rounded-[1.5rem] p-5 ${className}`}>
+    <article className={`glass-card rounded-[1.75rem] p-5 sm:p-6 ${className}`}>
       <button
         type="button"
-        onClick={() => setExpanded((current) => !current)}
-        aria-expanded={expanded}
+        onClick={handleToggle}
+        aria-expanded={isExpanded}
         className="flex w-full items-start justify-between gap-4 text-left"
       >
         <div className="min-w-0 flex-1">{summary}</div>
         <ChevronDown
-          className={`mt-1 h-5 w-5 shrink-0 text-slate-500 transition-transform ${
-            expanded ? "rotate-180" : ""
+          className={`mt-1 h-5 w-5 shrink-0 text-[color:var(--text-muted)] transition-transform ${
+            isExpanded ? "rotate-180" : ""
           }`}
         />
       </button>
-      {expanded ? <div className="mt-4">{children}</div> : null}
+      {isExpanded ? <div className="mt-4">{children}</div> : null}
     </article>
   );
 }

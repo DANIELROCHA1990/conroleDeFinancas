@@ -17,7 +17,7 @@ export function calculateCurrentBalance(
     .reduce((sum, expense) => sum + getExpenseValue(expense), 0);
   const reserved = reserves.reduce((sum, reserve) => sum + reserve.currentAmount, 0);
 
-  return received - paid - reserved;
+  return received - paid + reserved;
 }
 
 export function calculateProjectedBalance(

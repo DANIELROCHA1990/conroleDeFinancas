@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { FormField } from "@/components/ui/form-field";
 
 type PaymentAssigneeOption = { id: string; name: string; active: boolean };
 
@@ -19,28 +20,32 @@ export function FixedExpenseAssignmentFields({
 
   return (
     <>
-      <select
-        name="assignment_mode"
-        value={assignmentMode}
-        onChange={(event) => setAssignmentMode(event.target.value as "single" | "all")}
-        className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
-        required
-      >
-        <option value="single">Atribuicao individual</option>
-        {canSplitAcrossAll ? <option value="all">Todos</option> : null}
-      </select>
-      <select
-        name="assignee_id"
-        defaultValue={defaultAssigneeId ?? activeAssignees[0]?.id ?? ""}
-        disabled={assignmentMode === "all"}
-        aria-disabled={assignmentMode === "all"}
-        className={`rounded-2xl border px-4 py-3 ${assignmentMode === "all" ? "cursor-not-allowed border-white/5 bg-slate-100/40 text-slate-400 opacity-60" : "border-white/10 bg-white/5"}`}
-        required={assignmentMode === "single"}
-      >
-        {activeAssignees.map((assignee) => (
-          <option key={assignee.id} value={assignee.id}>{assignee.name}</option>
-        ))}
-      </select>
+      <FormField label="Responsabilidade" hint="Defina se a conta pertence a uma pessoa ou a todos.">
+        <select
+          name="assignment_mode"
+          value={assignmentMode}
+          onChange={(event) => setAssignmentMode(event.target.value as "single" | "all")}
+          className="app-input"
+          required
+        >
+          <option value="single">Responsavel individual</option>
+          {canSplitAcrossAll ? <option value="all">Todos os responsaveis</option> : null}
+        </select>
+      </FormField>
+      <FormField label="Responsavel" hint="Campo usado apenas quando a conta pertence a uma pessoa.">
+        <select
+          name="assignee_id"
+          defaultValue={defaultAssigneeId ?? activeAssignees[0]?.id ?? ""}
+          disabled={assignmentMode === "all"}
+          aria-disabled={assignmentMode === "all"}
+          className="app-input"
+          required={assignmentMode === "single"}
+        >
+          {activeAssignees.map((assignee) => (
+            <option key={assignee.id} value={assignee.id}>{assignee.name}</option>
+          ))}
+        </select>
+      </FormField>
     </>
   );
 }

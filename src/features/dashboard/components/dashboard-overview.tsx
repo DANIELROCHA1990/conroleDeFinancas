@@ -2,6 +2,7 @@ import { MonthlyRepassChart } from "@/components/charts/monthly-repass-chart";
 import { MonthlyBalanceChart } from "@/components/charts/monthly-balance-chart";
 import { SpendingByCategoryChart } from "@/components/charts/spending-by-category-chart";
 import { SectionHeader } from "@/components/ui/section-header";
+import { StatCard } from "@/components/ui/stat-card";
 import { DashboardCards } from "@/features/dashboard/components/dashboard-cards";
 import { buildDashboardSummary } from "@/features/dashboard/services/dashboard-service";
 import { formatCurrency } from "@/lib/currency/format-currency";
@@ -44,11 +45,11 @@ export async function DashboardOverview({ selectedMonth }: { selectedMonth?: str
           <div className="glass-card rounded-[1.75rem] p-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <h2 className="text-lg font-medium">Repasse mensal</h2>
-                <p className="mt-1 text-sm text-slate-300">Resumo das contas fixas por responsavel na competencia selecionada.</p>
+                <h2 className="text-lg font-semibold tracking-[-0.03em]">Repasse mensal</h2>
+                <p className="mt-1 text-sm text-[color:var(--text-muted)]">Resumo das contas fixas por responsavel na competencia selecionada.</p>
               </div>
               <form method="get">
-                <select name="month" defaultValue={summary.repasseMonth} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <select name="month" defaultValue={summary.repasseMonth} className="app-input">
                   {summary.repasseMonths.map((month) => (
                     <option key={month} value={month}>{formatCompetenceMonthLabel(month)}</option>
                   ))}
@@ -59,28 +60,19 @@ export async function DashboardOverview({ selectedMonth }: { selectedMonth?: str
           <MonthlyRepassChart data={summary.monthlyRepasses} />
         </div>
         <article className="glass-card rounded-[1.75rem] p-5">
-          <h3 className="text-lg font-medium">Detalhamento do repasse</h3>
-          <p className="mt-1 text-sm text-slate-300">{formatCompetenceMonthLabel(summary.repasseMonth)}</p>
+          <h3 className="text-lg font-semibold tracking-[-0.03em]">Detalhamento do repasse</h3>
+          <p className="mt-1 text-sm text-[color:var(--text-muted)]">{formatCompetenceMonthLabel(summary.repasseMonth)}</p>
           <div className="mt-4 space-y-3">
             {summary.monthlyRepassBreakdown.length === 0 ? (
-              <p className="text-sm text-slate-300">Nenhum repasse calculado para este mes.</p>
+              <p className="text-sm text-[color:var(--text-muted)]">Nenhum repasse calculado para este mes.</p>
             ) : null}
             {summary.monthlyRepassBreakdown.map((item) => (
-              <div key={item.fixedExpenseId} className="rounded-[1.25rem] border border-white/10 bg-white/20 p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm text-slate-300">Conta</p>
-                    <h4 className="font-medium">{item.fixedExpenseName}</h4>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-slate-300">Valor total</p>
-                    <strong>{formatCurrency(item.totalAmount)}</strong>
-                  </div>
-                </div>
+              <div key={item.fixedExpenseId} className="rounded-[1.25rem] border border-[color:var(--border-soft)] bg-[color:var(--surface-raised)] p-4">
+                <StatCard label={item.fixedExpenseName} value={formatCurrency(item.totalAmount)} description="Valor total distribuido na competencia selecionada." />
                 <div className="mt-4 space-y-2">
                   {item.allocations.map((allocation) => (
                     <div key={`${item.fixedExpenseId}-${allocation.assigneeName}`} className="flex items-center justify-between text-sm">
-                      <span className="text-slate-600">{allocation.assigneeName}</span>
+                      <span className="text-[color:var(--text-muted)]">{allocation.assigneeName}</span>
                       <strong>{formatCurrency(allocation.amount)}</strong>
                     </div>
                   ))}
@@ -88,8 +80,8 @@ export async function DashboardOverview({ selectedMonth }: { selectedMonth?: str
               </div>
             ))}
             {summary.monthlyRepassBreakdown.length > 0 ? (
-              <div className="flex items-center justify-between border-t border-white/10 pt-4 text-sm">
-                <span className="text-slate-600">Total consolidado do repasse</span>
+              <div className="flex items-center justify-between border-t border-[color:var(--border-soft)] pt-4 text-sm">
+                <span className="text-[color:var(--text-muted)]">Total consolidado do repasse</span>
                 <strong>{formatCurrency(summary.monthlyRepassGrandTotal)}</strong>
               </div>
             ) : null}

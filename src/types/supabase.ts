@@ -123,6 +123,7 @@ export type Database = {
         Row: {
           amount: number;
           category_id: string | null;
+          current_installment: number;
           created_at: string;
           credit_card_id: string;
           deleted_at: string | null;
@@ -138,6 +139,7 @@ export type Database = {
         Insert: {
           amount: number;
           category_id?: string | null;
+          current_installment?: number;
           created_at?: string;
           credit_card_id: string;
           deleted_at?: string | null;
