@@ -13,7 +13,11 @@ import {
   Settings,
   Tags,
   Wallet,
+  LogOut,
 } from "lucide-react";
+
+import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { signOut } from "@/lib/supabase/auth-actions";
 
 const iconMap = {
   bell: Bell,
@@ -49,25 +53,45 @@ export function MobileNav({
   return (
     <div className="fixed inset-x-4 bottom-4 z-50 lg:hidden">
       {expanded ? (
-        <div className="glass-card mb-3 grid grid-cols-2 gap-2 rounded-[1.75rem] p-3">
-          {overflowItems.map(({ href, iconName, label }) => {
-            const active = pathname === href;
-            const Icon = iconMap[iconName];
+        <div className="glass-card mb-3 space-y-3 rounded-[1.75rem] p-3">
+          <div className="grid grid-cols-2 gap-2">
+            {overflowItems.map(({ href, iconName, label }) => {
+              const active = pathname === href;
+              const Icon = iconMap[iconName];
 
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setExpanded(false)}
-                className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm ${
-                  active ? "bg-emerald-100 text-emerald-900" : "text-[color:var(--text-muted)]"
-                }`}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="truncate">{label}</span>
-              </Link>
-            );
-          })}
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setExpanded(false)}
+                  className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm ${
+                    active ? "bg-emerald-100 text-emerald-900" : "text-[color:var(--text-muted)]"
+                  }`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{label}</span>
+                </Link>
+              );
+            })}
+          </div>
+          <div className="-mt-14 grid grid-cols-2 gap-2">
+            <div />
+            <div className="flex items-center justify-start gap-2">
+              <div className="w-11 shrink-0">
+                <ThemeToggle collapsed />
+              </div>
+              <form action={signOut} className="w-11 shrink-0">
+                <button
+                  type="submit"
+                  aria-label="Sair"
+                  title="Sair"
+                  className="flex w-full justify-center rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface-raised)] px-3 py-2 text-sm text-[color:var(--text-main)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
+                >
+                  <LogOut className="h-4 w-4 shrink-0" />
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
       ) : null}
       <nav className="glass-card grid grid-cols-5 gap-1 rounded-[1.75rem] p-2">
