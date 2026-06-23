@@ -3,7 +3,7 @@
 import { Bell, ChevronLeft, ChevronRight, CreditCard, Landmark, LayoutDashboard, LogOut, PiggyBank, Settings, Tags, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import { MobileNav, type MobileNavIconName } from "@/components/layout/mobile-nav";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -28,30 +28,35 @@ const navItems: Array<{
 
 const STORAGE_KEY = "finance-sidebar-collapsed";
 
+function subscribe(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange);
+  return () => window.removeEventListener("storage", onStoreChange);
+}
+
+function getSnapshot() {
+  return window.localStorage.getItem(STORAGE_KEY) === "true";
+}
+
+function getServerSnapshot() {
+  return false;
+}
+
 export function AppShell({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    return window.localStorage.getItem(STORAGE_KEY) === "true";
-  });
+  const collapsed = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   function toggleSidebar() {
-    setCollapsed((current) => {
-      const next = !current;
-      window.localStorage.setItem(STORAGE_KEY, String(next));
-      return next;
-    });
+    const next = !collapsed;
+    window.localStorage.setItem(STORAGE_KEY, String(next));
+    window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY, newValue: String(next) }));
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[1600px] gap-4 px-4 py-4 sm:px-6 lg:px-8">
+    <div className="mx-auto flex min-h-screen w-full max-w-[1600px] gap-4 px-3 py-3 sm:px-5 sm:py-5 lg:px-8">
       <aside
         className={`glass-card hidden self-start rounded-[2rem] p-4 lg:sticky lg:top-4 lg:flex lg:h-[calc(100vh-2rem)] lg:flex-col ${
           collapsed ? "lg:w-20" : "lg:w-52"
@@ -59,15 +64,16 @@ export function AppShell({
       >
         <div className="flex items-start justify-between gap-2">
           <div className={collapsed ? "hidden" : "block"}>
-            <p className="text-[10px] uppercase tracking-[0.28em] text-slate-500">
-              Controle de Financas
+            <p className="text-[10px] uppercase tracking-[0.28em] text-[color:var(--text-subtle)]">
+              Controle Financeiro
             </p>
+            <p className="mt-2 text-lg font-semibold tracking-[-0.03em] text-[color:var(--text-main)]">Painel</p>
           </div>
           <button
             type="button"
             onClick={toggleSidebar}
             aria-label={collapsed ? "Expandir sidebar" : "Colapsar sidebar"}
-            className="rounded-2xl border border-slate-200 bg-white/80 p-2 text-slate-700 transition hover:bg-slate-50"
+            className="rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface-raised)] p-2 text-[color:var(--text-main)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
@@ -81,14 +87,14 @@ export function AppShell({
                 key={href}
                 href={href}
                 title={collapsed ? label : undefined}
-                className={`flex items-center rounded-2xl px-3 py-2 text-sm transition ${
+                className={`flex items-center rounded-2xl px-3 py-2.5 text-sm transition ${
                   active
                     ? "bg-emerald-100 text-emerald-900"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    : "text-[color:var(--text-muted)] hover:bg-[color:var(--surface-raised)] hover:text-[color:var(--text-main)]"
                 } ${collapsed ? "justify-center" : "gap-3"}`}
               >
-                <Icon className={`h-4 w-4 shrink-0 ${active ? "text-emerald-700" : "text-slate-500"}`} />
-                {collapsed ? null : <span className="truncate text-[12px]">{label}</span>}
+                <Icon className={`h-4 w-4 shrink-0 ${active ? "text-emerald-700" : "text-[color:var(--text-subtle)]"}`} />
+                {collapsed ? null : <span className="truncate text-[12px] font-medium">{label}</span>}
               </Link>
             );
           })}
@@ -101,7 +107,7 @@ export function AppShell({
             type="submit"
             aria-label="Sair"
             title="Sair"
-            className={`mt-3 w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:bg-slate-800 ${
+            className={`mt-3 w-full rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface-raised)] px-3 py-2 text-sm text-[color:var(--text-main)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)] ${
               collapsed ? "flex justify-center" : "flex items-center gap-3"
             }`}
           >

@@ -19,8 +19,11 @@ export const creditCardPurchaseFormSchema = z.object({
   description: z.string().trim().min(2).max(160),
   amount: z.coerce.number().positive(),
   purchased_at: z.string().date(),
+  current_installment: z.coerce.number().int().min(1).max(48),
   installment_count: z.coerce.number().int().min(1).max(48),
-  status: z.enum(["open", "posted", "cancelled"]),
+}).refine((value) => value.current_installment <= value.installment_count, {
+  message: "A parcela atual nao pode ser maior que o total de parcelas.",
+  path: ["current_installment"],
 });
 
 export type CreditCardFormValues = z.infer<typeof creditCardFormSchema>;

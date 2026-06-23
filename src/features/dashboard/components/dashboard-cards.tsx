@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { useState } from "react";
 
+import { StatCard } from "@/components/ui/stat-card";
 import { formatCurrency } from "@/lib/currency/format-currency";
 
 type DashboardCardDetail = {
@@ -28,12 +29,13 @@ export function DashboardCards({ cards }: { cards: DashboardCard[] }) {
             key={card.label}
             type="button"
             onClick={() => setSelectedCard(card)}
-            className="glass-card rounded-[1.75rem] p-5 text-left transition-transform duration-200 hover:-translate-y-0.5"
+            className="text-left"
           >
-            <p className="text-sm text-slate-300">{card.label}</p>
-            <strong className="mt-4 block text-3xl font-semibold">
-              {formatCurrency(card.value)}
-            </strong>
+            <StatCard
+              label={card.label}
+              value={formatCurrency(card.value)}
+              description={card.description}
+            />
           </button>
         ))}
       </section>
@@ -43,14 +45,14 @@ export function DashboardCards({ cards }: { cards: DashboardCard[] }) {
           <div className="glass-card w-full max-w-2xl rounded-[1.75rem] p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm text-slate-300">{selectedCard.label}</p>
-                <h2 className="mt-2 text-3xl font-semibold text-slate-900">{formatCurrency(selectedCard.value)}</h2>
-                <p className="mt-3 text-sm leading-6 text-slate-600">{selectedCard.description}</p>
+                <p className="text-sm text-[color:var(--text-muted)]">{selectedCard.label}</p>
+                <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-[color:var(--text-main)]">{formatCurrency(selectedCard.value)}</h2>
+                <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">{selectedCard.description}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedCard(null)}
-                className="rounded-full border border-white/10 bg-white/40 p-2 text-slate-600"
+                className="rounded-full border border-[color:var(--border-soft)] bg-[color:var(--surface-raised)] p-2 text-[color:var(--text-main)]"
                 aria-label="Fechar modal"
               >
                 <X className="h-5 w-5" />
@@ -59,9 +61,9 @@ export function DashboardCards({ cards }: { cards: DashboardCard[] }) {
 
             <div className="mt-6 space-y-3">
               {selectedCard.details.map((detail) => (
-                <div key={detail.label} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/30 px-4 py-3 text-sm">
-                  <span className="text-slate-600">{detail.label}</span>
-                  <strong className="text-slate-900">{detail.value}</strong>
+                <div key={detail.label} className="flex items-center justify-between rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface-raised)] px-4 py-3 text-sm">
+                  <span className="text-[color:var(--text-muted)]">{detail.label}</span>
+                  <strong className="text-[color:var(--text-main)]">{detail.value}</strong>
                 </div>
               ))}
             </div>

@@ -60,7 +60,7 @@ export function MobileNav({
                 href={href}
                 onClick={() => setExpanded(false)}
                 className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm ${
-                  active ? "bg-emerald-100 text-emerald-900" : "text-slate-600"
+                  active ? "bg-emerald-100 text-emerald-900" : "text-[color:var(--text-muted)]"
                 }`}
               >
                 <Icon className="h-4 w-4 shrink-0" />
@@ -80,7 +80,7 @@ export function MobileNav({
               key={href}
               href={href}
               className={`flex min-w-0 flex-col items-center gap-1.5 rounded-2xl px-2 py-2 text-center text-[10px] leading-tight ${
-                active ? "bg-emerald-100 text-emerald-900" : "text-slate-600"
+                active ? "bg-emerald-100 text-emerald-900" : "text-[color:var(--text-muted)]"
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -94,7 +94,7 @@ export function MobileNav({
             aria-label={expanded ? "Ocultar modulos" : "Mostrar mais modulos"}
             onClick={() => setExpanded((current) => !current)}
             className={`flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-2xl px-2 py-2 text-center text-[10px] leading-tight ${
-              expanded ? "bg-emerald-100 text-emerald-900" : "text-slate-600"
+              expanded ? "bg-emerald-100 text-emerald-900" : "text-[color:var(--text-muted)]"
             }`}
           >
             <ChevronUp

@@ -1,6 +1,6 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { CreditCardFormValues, CreditCardPurchaseFormValues } from "@/features/credit-cards/credit-cards.schema";
-import { buildPurchaseInstallments } from "@/features/credit-cards/credit-cards.service";
+import { buildPurchaseInstallments, resolveCreditCardPurchaseStatus } from "@/features/credit-cards/credit-cards.service";
 
 export type CreditCardListItem = {
   id: string;
@@ -21,9 +21,10 @@ export type CreditCardPurchaseListItem = {
   description: string;
   amount: number;
   purchased_at: string;
+  current_installment: number;
   installment_count: number;
   status: "open" | "posted" | "cancelled";
-  credit_cards: { name: string } | null;
+  credit_cards: { name: string; due_day: number; closing_day: number } | null;
   categories: { name: string } | null;
 };
 
@@ -46,7 +47,7 @@ export async function listCreditCardPurchases() {
   const supabase = await getSupabaseServerClient();
   const { data, error } = await supabase
     .from("credit_card_purchases")
-    .select("id, credit_card_id, category_id, description, amount, purchased_at, installment_count, status, credit_cards(name), categories(name)")
+    .select("id, credit_card_id, category_id, description, amount, purchased_at, current_installment, installment_count, status, credit_cards(name,due_day,closing_day), categories(name)")
     .is("deleted_at", null)
     .order("purchased_at", { ascending: false });
 
@@ -70,6 +71,33 @@ export async function listPurchaseInstallments(purchaseId: string) {
   }
 
   return data ?? [];
+}
+
+export async function listPurchaseInstallmentsByPurchaseIds(purchaseIds: string[]) {
+  if (purchaseIds.length === 0) {
+    return new Map<string, Awaited<ReturnType<typeof listPurchaseInstallments>>>();
+  }
+
+  const supabase = await getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("credit_card_installments")
+    .select("id, purchase_id, installment_number, total_installments, amount, competency_month, status")
+    .in("purchase_id", purchaseIds)
+    .order("installment_number");
+
+  if (error) {
+    throw new Error(`Falha ao listar parcelas: ${error.message}`);
+  }
+
+  const installmentsByPurchase = new Map<string, Array<(typeof data)[number]>>();
+
+  for (const installment of data ?? []) {
+    const purchaseInstallments = installmentsByPurchase.get(installment.purchase_id) ?? [];
+    purchaseInstallments.push(installment);
+    installmentsByPurchase.set(installment.purchase_id, purchaseInstallments);
+  }
+
+  return installmentsByPurchase;
 }
 
 export async function createCreditCard(payload: CreditCardFormValues & { user_id: string }) {
@@ -105,9 +133,27 @@ export async function softDeleteCreditCard(id: string, userId: string) {
 
 export async function createCreditCardPurchase(payload: CreditCardPurchaseFormValues & { user_id: string }) {
   const supabase = await getSupabaseServerClient();
+  const cardResult = await supabase
+    .from("credit_cards")
+    .select("due_day, closing_day")
+    .eq("id", payload.credit_card_id)
+    .eq("user_id", payload.user_id)
+    .single();
+
+  if (cardResult.error || !cardResult.data) {
+    throw new Error(`Falha ao carregar vencimento do cartao: ${cardResult.error?.message ?? "cartao nao encontrado"}`);
+  }
+
+  const purchaseStatus = resolveCreditCardPurchaseStatus({
+    currentInstallment: payload.current_installment,
+    installmentCount: payload.installment_count,
+    purchasedAt: payload.purchased_at,
+    closingDay: cardResult.data.closing_day,
+    dueDay: cardResult.data.due_day,
+  });
   const { data, error } = await supabase
     .from("credit_card_purchases")
-    .insert(payload)
+    .insert({ ...payload, status: purchaseStatus })
     .select("id")
     .single();
 
@@ -117,8 +163,11 @@ export async function createCreditCardPurchase(payload: CreditCardPurchaseFormVa
 
   const installments = buildPurchaseInstallments({
     amount: payload.amount,
+    currentInstallment: payload.current_installment,
     installmentCount: payload.installment_count,
     purchasedAt: payload.purchased_at,
+    closingDay: cardResult.data.closing_day,
+    dueDay: cardResult.data.due_day,
   }).map((item) => ({
     ...item,
     purchase_id: data.id,

@@ -1,4 +1,8 @@
+import { Power } from "lucide-react";
+
 import { ExpandableCard } from "@/components/ui/expandable-card";
+import { ServerActionButtonForm } from "@/components/ui/server-action-button-form";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import { SectionHeader } from "@/components/ui/section-header";
 import { deletePaymentAssigneeAction, togglePaymentAssigneeAction } from "@/features/settings/payment-assignees.actions";
 import { PaymentAssigneeForm } from "@/features/settings/components/payment-assignee-form";
@@ -12,12 +16,12 @@ export async function PaymentAssigneeList() {
       <SectionHeader
         eyebrow="Responsaveis"
         title="Repasse de contas fixas"
-        description="Cadastre quem pode receber a atribuicao das contas fixas e mantenha o historico mensal para auditoria."
+        description="Cadastre responsaveis com uma interface mais objetiva e consistente com o restante do sistema."
       />
       <PaymentAssigneeForm />
       <div className="grid gap-4 md:grid-cols-2">
         {assignees.length === 0 ? (
-          <article className="glass-card rounded-[1.5rem] p-5 text-sm text-slate-300">
+          <article className="glass-card rounded-[1.5rem] p-5 text-sm text-[color:var(--text-muted)]">
             Nenhum responsavel cadastrado ainda.
           </article>
         ) : null}
@@ -25,28 +29,29 @@ export async function PaymentAssigneeList() {
           <ExpandableCard
             key={assignee.id}
             summary={(
-              <>
-                <h2 className="font-medium">{assignee.name}</h2>
-                <p className="mt-2 text-sm text-slate-300">Status: {assignee.active ? "ativo" : "inativo"}</p>
-              </>
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold tracking-[-0.03em]">{assignee.name}</h2>
+                <div className="app-chip text-xs">{assignee.active ? "Ativo" : "Inativo"}</div>
+              </div>
             )}
           >
             <div className="space-y-4">
               <PaymentAssigneeForm assignee={assignee} />
-              <div className="flex gap-3">
-                <form action={togglePaymentAssigneeAction} className="flex-1">
+              <div className="flex justify-end gap-3">
+                <form action={togglePaymentAssigneeAction}>
                   <input type="hidden" name="id" value={assignee.id} />
                   <input type="hidden" name="active" value={assignee.active ? "false" : "true"} />
-                  <button className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
-                    {assignee.active ? "Inativar" : "Reativar"}
-                  </button>
+                  <IconActionButton label={assignee.active ? "Inativar responsavel" : "Reativar responsavel"} icon={Power} type="submit" />
                 </form>
-                <form action={deletePaymentAssigneeAction} className="flex-1">
+                <ServerActionButtonForm
+                  action={deletePaymentAssigneeAction}
+                  buttonClassName="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-500/25 bg-rose-500/12 text-rose-700 transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)] dark:text-rose-200"
+                  pendingLabel="Excluindo..."
+                  buttonLabel="Excluir responsavel"
+                  iconName="trash"
+                >
                   <input type="hidden" name="id" value={assignee.id} />
-                  <button className="w-full rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
-                    Excluir
-                  </button>
-                </form>
+                </ServerActionButtonForm>
               </div>
             </div>
           </ExpandableCard>

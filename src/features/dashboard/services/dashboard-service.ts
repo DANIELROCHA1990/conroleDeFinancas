@@ -1,4 +1,4 @@
-import { calculateBudgetUsage, calculateCurrentBalance, calculateProjectedBalance } from "@/lib/services/financial-math";
+import { calculateBudgetUsage, calculateCurrentBalance } from "@/lib/services/financial-math";
 import { getDashboardData } from "@/features/dashboard/repositories/dashboard-repository";
 import { getCompetenceMonth } from "@/features/fixed-expenses/fixed-expenses.service";
 import { listAllocationMonths, listMonthlyRepasses } from "@/features/fixed-expenses/repositories/fixed-expense-allocation-repository";
@@ -14,11 +14,16 @@ export async function buildDashboardSummary(selectedMonth?: string) {
   const installments = data.installments ?? [];
   const currentMonth = getCompetenceMonth(new Date());
   const currentMonthKey = currentMonth.slice(0, 7);
+  const today = new Date();
+  const todayIso = today.toISOString().slice(0, 10);
   const repasseMonth = selectedMonth ?? allocationMonths[0] ?? currentMonth;
   const monthlyRepasses = await listMonthlyRepasses(repasseMonth);
   const currentMonthIncomes = incomes.filter((item) => item.received_on.startsWith(currentMonthKey));
   const currentMonthExpenses = expenses.filter((item) => item.due_date.startsWith(currentMonthKey));
-  const currentMonthInstallments = installments.filter((item) => item.competency_month.startsWith(currentMonthKey));
+  const futureOpenInstallments = installments.filter((item) =>
+    item.competency_month >= todayIso &&
+    item.status !== "paid",
+  );
 
   const currentBalance = calculateCurrentBalance(
     incomes.map((item) => ({
@@ -42,26 +47,7 @@ export async function buildDashboardSummary(selectedMonth?: string) {
       currentAmount: item.current_amount,
     })),
   );
-  const projectedBalance = calculateProjectedBalance(
-    currentMonthIncomes.map((item) => ({
-      id: crypto.randomUUID(),
-      description: "",
-      amount: item.amount,
-      status: item.status,
-    })),
-    currentMonthExpenses.map((item) => ({
-      id: crypto.randomUUID(),
-      description: "",
-      amount: item.amount,
-      estimatedAmount: item.estimated_amount,
-      status: item.status,
-      categoryId: item.category_id ?? "",
-    })),
-    [],
-  );
-  const totalCardUsage = currentMonthInstallments
-    .filter((item) => item.status !== "paid")
-    .reduce((sum, item) => sum + item.amount, 0);
+  const totalCardUsage = futureOpenInstallments.reduce((sum, item) => sum + item.amount, 0);
   const totalReserved = reserves.reduce((sum, reserve) => sum + reserve.current_amount, 0);
   const totalExpenses = currentMonthExpenses.reduce(
     (sum, item) => sum + getEffectiveExpenseAmount({ amount: item.amount, estimatedAmount: item.estimated_amount }),
@@ -76,8 +62,9 @@ export async function buildDashboardSummary(selectedMonth?: string) {
   const pendingExpenses = currentMonthExpenses
     .filter((item) => item.status !== "paid")
     .reduce((sum, item) => sum + getEffectiveExpenseAmount({ amount: item.amount, estimatedAmount: item.estimated_amount }), 0);
+  const projectedBalance = currentBalance + expectedIncomes - pendingExpenses;
   const activeReserves = reserves.filter((item) => item.current_amount > 0).length;
-  const openInstallments = currentMonthInstallments.filter((item) => item.status !== "paid");
+  const openInstallments = futureOpenInstallments;
   const monthlyKeys = Array.from(
     new Set([
       ...incomes.map((item) => item.received_on.slice(0, 7)),
@@ -133,7 +120,7 @@ export async function buildDashboardSummary(selectedMonth?: string) {
         description: "Total em aberto nas parcelas de cartao ainda nao quitadas.",
         details: [
           { label: "Parcelas em aberto", value: String(openInstallments.length) },
-          { label: "Parcelas totais", value: String(installments.length) },
+          { label: "Parcelas registradas", value: String(installments.length) },
           { label: "Compromisso em aberto", value: totalCardUsage.toFixed(2) },
         ],
       },

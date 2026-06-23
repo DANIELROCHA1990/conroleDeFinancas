@@ -41,6 +41,33 @@ export async function listReserveTransactions(reserveId: string) {
   return data ?? [];
 }
 
+export async function listReserveTransactionsByReserveIds(reserveIds: string[]) {
+  if (reserveIds.length === 0) {
+    return new Map<string, Awaited<ReturnType<typeof listReserveTransactions>>>();
+  }
+
+  const supabase = await getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("reserve_transactions")
+    .select("id, reserve_id, transaction_type, amount, description, created_at")
+    .in("reserve_id", reserveIds)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`Falha ao listar movimentacoes das reservas: ${error.message}`);
+  }
+
+  const transactionsByReserve = new Map<string, Array<(typeof data)[number]>>();
+
+  for (const transaction of data ?? []) {
+    const reserveTransactions = transactionsByReserve.get(transaction.reserve_id) ?? [];
+    reserveTransactions.push(transaction);
+    transactionsByReserve.set(transaction.reserve_id, reserveTransactions);
+  }
+
+  return transactionsByReserve;
+}
+
 export async function createReserve(payload: ReserveFormValues & { user_id: string }) {
   const supabase = await getSupabaseServerClient();
   const { error } = await supabase.from("reserves").insert(payload);

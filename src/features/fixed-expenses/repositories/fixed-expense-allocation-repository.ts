@@ -150,11 +150,10 @@ export async function listMonthlyRepasses(competenceMonth: string): Promise<Mont
   const fixedExpensesResult = await supabase
     .from("fixed_expenses")
     .select("id, name")
-    .eq("assignment_mode", "all")
     .is("deleted_at", null);
 
   if (fixedExpensesResult.error) {
-    throw new Error(`Falha ao listar contas com atribuicao para todos: ${fixedExpensesResult.error.message}`);
+    throw new Error(`Falha ao listar contas fixas para o repasse: ${fixedExpensesResult.error.message}`);
   }
 
   const fixedExpenseIds = (fixedExpensesResult.data ?? []).map((item) => item.id);

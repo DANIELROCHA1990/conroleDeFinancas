@@ -138,3 +138,15 @@ export async function updateGeneratedFixedExpenseAssignmentAction(formData: Form
   revalidatePath("/contas-fixas");
   revalidatePath("/dashboard");
 }
+
+export async function syncFixedExpensesAction() {
+  const user = await requireUser();
+  const fixedExpenses = await listFixedExpenses();
+
+  await Promise.all(
+    fixedExpenses.map((expense) => ensureMonthlyFixedExpenseGenerated(expense, user.id)),
+  );
+
+  revalidatePath("/contas-fixas");
+  revalidatePath("/dashboard");
+}

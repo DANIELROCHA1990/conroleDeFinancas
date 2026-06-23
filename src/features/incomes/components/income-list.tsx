@@ -1,4 +1,8 @@
+import { CircleCheckBig } from "lucide-react";
+
 import { ExpandableCard } from "@/components/ui/expandable-card";
+import { ServerActionButtonForm } from "@/components/ui/server-action-button-form";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import { SectionHeader } from "@/components/ui/section-header";
 import { formatCurrency } from "@/lib/currency/format-currency";
 import { listCategoryOptions } from "@/features/categories/repositories/category-repository";
@@ -17,12 +21,12 @@ export async function IncomeList() {
       <SectionHeader
         eyebrow="Entradas"
         title="Recebimentos"
-        description="Acompanhe valores recebidos e previstos para visualizar melhor seu fluxo financeiro."
+        description="Visualize entradas previstas e recebidas com menos ruído e acoes mais objetivas."
       />
       <IncomeForm categories={categories} />
       <div className="space-y-4">
         {incomes.length === 0 ? (
-          <article className="glass-card rounded-[1.5rem] p-5 text-sm text-slate-300">
+          <article className="glass-card rounded-[1.5rem] p-5 text-sm text-[color:var(--text-muted)]">
             Nenhuma entrada cadastrada.
           </article>
         ) : null}
@@ -30,32 +34,36 @@ export async function IncomeList() {
           <ExpandableCard
             key={income.id}
             summary={(
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-medium">{income.description}</h2>
-                  <p className="text-sm text-slate-300">
-                    {income.status} • {(income.categories as { name?: string } | null)?.name ?? "Sem categoria"}
-                  </p>
+              <div className="space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-semibold tracking-[-0.03em]">{income.description}</h2>
+                    <p className="mt-1 text-sm text-[color:var(--text-muted)]">
+                      {(income.categories as { name?: string } | null)?.name ?? "Sem categoria"}
+                    </p>
+                  </div>
+                  <strong className="text-2xl tracking-[-0.03em]">{formatCurrency(income.amount)}</strong>
                 </div>
-                <strong className="text-xl">{formatCurrency(income.amount)}</strong>
+                <div className="app-chip text-xs">{income.status === "received" ? "Recebida" : "Prevista"}</div>
               </div>
             )}
           >
             <div className="space-y-4">
               <IncomeForm categories={categories} income={income} />
-              <div className="flex gap-3">
-                <form action={markIncomeReceivedAction} className="flex-1">
+              <div className="flex justify-end gap-3">
+                <form action={markIncomeReceivedAction}>
                   <input type="hidden" name="id" value={income.id} />
-                  <button className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
-                    Marcar como recebida
-                  </button>
+                  <IconActionButton label="Marcar como recebida" icon={CircleCheckBig} type="submit" tone="primary" />
                 </form>
-                <form action={deleteIncomeAction} className="flex-1">
+                <ServerActionButtonForm
+                  action={deleteIncomeAction}
+                  buttonClassName="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-500/25 bg-rose-500/12 text-rose-700 transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)] dark:text-rose-200"
+                  pendingLabel="Excluindo..."
+                  buttonLabel="Excluir entrada"
+                  iconName="trash"
+                >
                   <input type="hidden" name="id" value={income.id} />
-                  <button className="w-full rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
-                    Excluir
-                  </button>
-                </form>
+                </ServerActionButtonForm>
               </div>
             </div>
           </ExpandableCard>
